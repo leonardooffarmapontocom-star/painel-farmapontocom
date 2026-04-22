@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farma Pontocom — Painel Operacional</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2f6f4;
+    --surface: #ffffff;
+    --surface2: #eef3f0;
+    --border: #d8e8e2;
+    --text: #0d2b22;
+    --muted: #6b9080;
+    --accent: #057862;
+    --accent-dark: #045a49;
+    --red: #b01f25;
+
+    --hoje: #057862;
+    --hoje-bg: #05786212;
+    --amanha: #1d6fb4;
+    --amanha-bg: #1d6fb412;
+    --atrasado: #b01f25;
+    --atrasado-bg: #b01f2512;
+    --expressa: #b05e00;
+    --expressa-bg: #b05e0012;
+    --retirada: #6d28d9;
+    --retirada-bg: #6d28d912;
+    --transporte: #7a9990;
+    --transporte-bg: #7a999012;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(5,120,98,0.08);
+  }
+
+  .logo svg {
+    height: 32px;
+    width: auto;
+  }
+
+  .header-center {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .auto-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .last-update {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .btn-config {
+    width: 34px; height: 34px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-config:hover { color: var(--accent); border-color: var(--accent); }
+
+  .btn-refresh {
+    display: flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+  }
+  .btn-refresh:hover { background: var(--accent-dark); }
+  .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-refresh svg { width: 14px; height: 14px; transition: transform 0.5s; }
+  .btn-refresh.loading svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DATETIME BAR */
+  .datetime-bar {
+    padding: 10px 28px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    color: #fff;
+  }
+
+  .datetime-item {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    opacity: 0.85;
+  }
+
+  .datetime-item strong { opacity: 1; font-weight: 700; }
+
+  .cutoff-badge {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+
+  .cutoff-badge.fechada {
+    background: rgba(176,31,37,0.3);
+    border-color: rgba(176,31,37,0.5);
+  }
+
+  /* SUMMARY */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-card {
+    background: var(--surface);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-right: 1px solid var(--border);
+  }
+  .summary-card:last-child { border-right: none; }
+  .summary-card:hover { background: var(--surface2); }
+
+  .summary-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .summary-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .summary-count {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1;
+  }
+
+  /* ERROR */
+  .error-banner {
+    margin: 12px 24px;
+    padding: 10px 16px;
+    background: #fff0f0;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--red);
+    display: none;
+  }
+
+  /* MAIN */
+  main { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* SECTION */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: var(--surface2); }
+
+  .section-stripe {
+    width: 4px; height: 22px;
+    border-radius: 2px; flex-shrink: 0;
+  }
+
+  .section-title {
+    font-size: 14px; font-weight: 600; flex: 1;
+  }
+
+  .section-subtitle {
+    font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 6px;
+  }
+
+  .section-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .section-badge.pulse { animation: badgePulse 1.5s ease-in-out infinite; }
+  @keyframes badgePulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .section-chevron { color: var(--muted); transition: transform 0.2s; font-size: 11px; }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+
+  /* CARDS DE PEDIDO estilo ML */
+  .orders-list { display: flex; flex-direction: column; }
+
+  .order-card {
+    display: grid;
+    grid-template-columns: 130px 1fr auto;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+  }
+  .order-card:last-child { border-bottom: none; }
+  .order-card:hover { background: var(--surface2); }
+
+  .order-left {
+    padding: 16px 16px 16px 20px;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  }
+
+  .order-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    color: var(--accent);
+  }
+
+  .order-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+  }
+
+  .order-elapsed {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+    width: fit-content;
+  }
+
+  .order-middle {
+    padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 8px; justify-content: center;
+  }
+
+  .order-client {
+    font-size: 14px; font-weight: 600; color: var(--text);
+  }
+
+  .order-items { display: flex; flex-direction: column; gap: 4px; }
+
+  .order-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text);
+  }
+
+  .order-item-qty {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    color: var(--accent); flex-shrink: 0;
+  }
+
+  .order-item-name { color: var(--text); flex: 1; }
+
+  .order-item-sku {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .order-right {
+    padding: 16px 20px 16px 16px;
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 6px;
+    min-width: 140px;
+  }
+
+  .order-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px; font-weight: 700; color: var(--text);
+  }
+
+  .order-frete {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 5px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  /* EMPTY / LOADING */
+  .empty-state {
+    padding: 36px 20px;
+    text-align: center; color: var(--muted); font-size: 13px;
+  }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+
+  .loading-state {
+    padding: 36px 20px;
+    text-align: center; color: var(--muted); font-size: 13px;
+  }
+
+  .spinner {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 10px;
+  }
+
+  /* COLORS */
+  .c-hoje { color: var(--hoje); }
+  .c-amanha { color: var(--amanha); }
+  .c-atrasado { color: var(--atrasado); }
+  .c-expressa { color: var(--expressa); }
+  .c-retirada { color: var(--retirada); }
+  .c-transporte { color: var(--transporte); }
+
+  .bg-hoje { background: var(--hoje-bg); border: 1px solid #05786222; }
+  .bg-amanha { background: var(--amanha-bg); border: 1px solid #1d6fb422; }
+  .bg-atrasado { background: var(--atrasado-bg); border: 1px solid #b01f2522; }
+  .bg-expressa { background: var(--expressa-bg); border: 1px solid #b05e0022; }
+  .bg-retirada { background: var(--retirada-bg); border: 1px solid #6d28d922; }
+  .bg-transporte { background: var(--transporte-bg); border: 1px solid #7a999022; }
+
+  /* MODAL CONFIG */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px; width: 460px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+
+  .modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .modal p { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    font-weight: 600; margin-bottom: 5px;
+  }
+  .field input {
+    width: 100%; padding: 9px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text);
+    font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  .btn-primary {
+    flex: 1; padding: 10px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-dark); }
+
+  .btn-secondary {
+    padding: 10px 18px;
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* CORS WARNING */
+  .cors-warning {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #92400e;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .cors-warning strong { display: block; margin-bottom: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal">
+    <h2>⚙️ Configurar Credenciais</h2>
+    <p>Dados salvos localmente no navegador. Nunca compartilhe estas credenciais.</p>
+    <div class="cors-warning">
+      <strong>⚠️ Sobre o erro "Failed to fetch"</strong>
+      Para o painel funcionar, abra-o via servidor local ou extensão de CORS no Chrome. Recomendamos instalar a extensão <strong>"Allow CORS"</strong> no Chrome e ativá-la enquanto usa este painel.
+    </div>
+    <div class="field">
+      <label>Wbuy — Usuário da API</label>
+      <input type="text" id="wbuyUser" placeholder="UUID do usuário" />
+    </div>
+    <div class="field">
+      <label>Wbuy — Senha da API</label>
+      <input type="password" id="wbuyPass" placeholder="Senha da API" />
+    </div>
+    <div class="field">
+      <label>Wbuy — Bearer Token (Authorization)</label>
+      <input type="password" id="wbuyBearer" placeholder="Token Bearer completo" />
+    </div>
+    <div class="field">
+      <label>Enviando — Token Bearer</label>
+      <input type="password" id="enviandoToken" placeholder="Token de acesso" />
+    </div>
+    <div class="field">
+      <label>Enviando — Slug da conta</label>
+      <input type="text" id="enviandoSlug" placeholder="ex: mundomed" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeConfig()">Cancelar</button>
+      <button class="btn-primary" onclick="saveConfig()">Salvar e Carregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3399.39 1080">
+      <defs><style>.cls-1{fill:#057862}.cls-2{fill:#b01f25}.cls-3{fill:#fff}</style></defs>
+      <g><path class="cls-1" d="M814.73,236.76S576.26,425.7,669.82,582.54C792.41,788.07,1055,928.33,1055,928.33H781.71S484.54,734,473.54,540C459.8,297.82,814.73,236.76,814.73,236.76Z"/></g>
+      <g><path class="cls-2" d="M721.18,928.33H350.63S132.8,786.16,144.26,614.19c15.68-235.12,539.31-369,539.31-369S402.46,346.16,446,582.54C464.36,734,721.18,928.33,721.18,928.33Z"/></g>
+      <g>
+        <path class="cls-1" d="M971.86,410.53h201.82v71.58H1050.4V552.7h116.82v67.1H1050.4V763.47H971.86Z"/>
+        <path class="cls-1" d="M1185.61,634.22c0-90,64.62-134.22,123.28-134.22,45.73,0,72.57,24.86,76.55,34.3h1.49V505h77v258.5h-77V734.14h-1.49c-4,9.44-30.82,34.3-76.55,34.3C1250.23,768.44,1185.61,724.2,1185.61,634.22Zm139.18,65.62c33.81,0,64.13-23.37,64.13-65.62s-30.32-65.62-64.13-65.62c-32.8,0-63.13,23.86-63.13,65.62S1292,699.84,1324.79,699.84Z"/>
+        <path class="cls-1" d="M1510.71,505h77v70.1c8.45-41.76,33.31-75.07,80-75.07a60.56,60.56,0,0,1,18.39,2.49v73.07a104.77,104.77,0,0,0-17.9-1.49c-51.2,0-80.53,34.3-80.53,83V763.47h-77Z"/>
+        <path class="cls-1" d="M1882.55,617.32c0-32.81-17.9-48.72-41.26-48.72-24.36,0-43.75,15.91-43.75,48.72V763.47h-77V505h77v31.82c13.92-21.38,37.78-36.79,72.08-36.79,30.32,0,56.67,12.93,73.07,40.77C1958.6,517.4,1986.44,500,2027.2,500c54.68,0,94.45,34.8,94.45,114.34V763.47H2044.6V617.32c0-32.81-17.89-48.72-41.26-48.72-24.85,0-43.74,15.91-43.74,48.72V763.47h-77Z"/>
+        <path class="cls-1" d="M2156,634.22c0-90,64.62-134.22,123.28-134.22,45.73,0,72.58,24.86,76.55,34.3h1.49V505h77.06v258.5h-77.06V734.14h-1.49c-4,9.44-30.82,34.3-76.55,34.3C2220.57,768.44,2156,724.2,2156,634.22Zm139.19,65.62c33.8,0,64.12-23.37,64.12-65.62s-30.32-65.62-64.12-65.62c-32.81,0-63.13,23.86-63.13,65.62S2262.33,699.84,2295.14,699.84Z"/>
+        <path class="cls-1" d="M2532.18,525h37c26.17,0,41,16.7,41,38.4,0,22.39-14.81,38.75-41,38.75h-28.93v45.12h-8.1Zm36.51,69.4c20.49,0,33.07-11.54,33.07-31,0-19.63-12.58-30.65-33.07-30.65h-28.41v61.65Z"/>
+        <path class="cls-1" d="M2621.56,602.46c0-29.79,22.73-46.49,45.81-46.49s46,16.7,46,46.49-22.91,46.5-46,46.5S2621.56,632.26,2621.56,602.46Zm45.81,39.1c19.11,0,37.88-13.78,37.88-39.1s-18.77-39.09-37.88-39.09-37.72,13.78-37.72,39.09S2648.25,641.56,2667.37,641.56Z"/>
+        <path class="cls-1" d="M2731.77,557.69h7.92v16.36c4.31-8.78,14.47-18.08,31.69-18.08,19.29,0,35.82,11.88,35.82,38.57v52.7h-7.92v-52c0-21.87-13.26-31.86-29.45-31.86s-30.14,10-30.14,31.86v52h-7.92Z"/>
+        <path class="cls-1" d="M2834.06,634v-69.4h-11.19v-6.89h11.19V534.78H2842v22.91h17.22v6.89H2842v67.5c0,6,2.93,9,8.78,9a19.11,19.11,0,0,0,8.1-1.9v6.72a17.7,17.7,0,0,1-9.47,2.41C2840.09,648.27,2834.06,643.79,2834.06,634Z"/>
+        <path class="cls-1" d="M2873.32,602.46c0-29.79,22.73-46.49,45.81-46.49s46,16.7,46,46.49-22.9,46.5-46,46.5S2873.32,632.26,2873.32,602.46Zm45.81,39.1c19.12,0,37.89-13.78,37.89-39.1s-18.77-39.09-37.89-39.09-37.71,13.78-37.71,39.09S2900,641.56,2919.13,641.56Z"/>
+        <path class="cls-1" d="M2979.23,602.64c0-30,22.73-46.67,45.63-46.67,15.5,0,30.49,7.57,38.06,22l-6.37,3.44c-6.37-11.71-18.6-18.08-31.34-18.08-18.77,0-37.89,13.78-37.89,39.27,0,25.14,19.12,38.92,37.89,38.92,12.74,0,25-6.38,31.34-18.09l6.37,3.45c-7.57,14.46-22.56,22-38.06,22C3002,649,2979.23,632.26,2979.23,602.64Z"/>
+        <path class="cls-1" d="M3076.18,602.46c0-29.79,22.73-46.49,45.81-46.49s46,16.7,46,46.49-22.9,46.5-46,46.5S3076.18,632.26,3076.18,602.46Zm45.81,39.1c19.12,0,37.89-13.78,37.89-39.1s-18.77-39.09-37.89-39.09-37.71,13.78-37.71,39.09S3102.87,641.56,3122,641.56Z"/>
+        <path class="cls-1" d="M3247.18,595.06c0-18.95-8.09-31.69-25.83-31.69-17.56,0-27,12.74-27,31.69v52.18h-7.92V557.69h7.92V573c4.14-8.62,12.92-17,28.59-17,13.78,0,25,6.54,29.79,21,3.28-9.65,12.75-21,31.17-21s32.21,11.71,32.21,38.06v53.21h-7.92V595.06c0-18.95-8.1-31.69-25.84-31.69-17.39,0-27.2,12.74-27.2,31.69v52.18h-7.93Z"/>
+        <rect class="cls-2" x="2520.64" y="663.91" width="796.77" height="109.66" rx="36.23"/>
+        <path class="cls-3" d="M2592.37,680.54h21.43c18.34,0,31.41,13.17,31.41,32.24S2632.14,745,2613.8,745h-21.43Zm21.06,54.75c13.71,0,21.16-9.08,21.16-22.51s-7.45-22.52-21.16-22.52h-10.8v45Z"/>
+        <path class="cls-3" d="M2693.78,697.79h10V710c1.64-7.08,6.36-13.07,15-13.07a11,11,0,0,1,3,.36v9.53a15.18,15.18,0,0,0-2.9-.27c-9,0-15.08,6.54-15.08,16.43V745h-10Z"/>
+        <path class="cls-3" d="M2766.22,721.4c0-15.89,12.44-24.51,24.7-24.51s24.69,8.62,24.69,24.51-12.43,24.51-24.69,24.51S2766.22,737.29,2766.22,721.4Zm24.7,15.34c7.72,0,14.71-5.63,14.71-15.34s-7-15.34-14.71-15.34-14.8,5.63-14.8,15.34S2783.2,736.74,2790.92,736.74Z"/>
+        <path class="cls-3" d="M2872.9,760.8v-8.26c2.18,1.45,6.81,2.91,12.07,2.91,9.17,0,16.07-4.18,16.07-13.08v-4.9h-.54c-1.64,3.72-7.54,8.44-16.07,8.44-11.08,0-22.88-8.26-22.88-24.51s11.8-24.51,22.88-24.51c8.53,0,14.43,4.72,16.07,8.44h.54v-7.54h10v44c0,17.43-13.53,22.06-24.33,22.06C2880.8,763.89,2875.44,762.53,2872.9,760.8Zm13.43-24c7.63,0,15-5.26,15-15.43S2894,706,2886.33,706s-14.89,5.26-14.89,15.43S2878.8,736.83,2886.33,736.83Z"/>
+        <path class="cls-3" d="M2959.23,721.4c0-16.25,11.71-24.51,22.88-24.51,8.63,0,14.62,4.72,16.34,8.44h.28v-7.54h10V745h-10v-7.54h-.28c-1.72,3.72-7.71,8.44-16.34,8.44C2970.94,745.91,2959.23,737.65,2959.23,721.4ZM2984,736.83c7.62,0,15-5.26,15-15.43S2991.64,706,2984,706s-14.89,5.26-14.89,15.43S2976.48,736.83,2984,736.83Z"/>
+        <path class="cls-3" d="M3059.19,697.79h10V710c1.64-7.08,6.36-13.07,15-13.07a11,11,0,0,1,3,.36v9.53a15.18,15.18,0,0,0-2.9-.27c-9,0-15.08,6.54-15.08,16.43V745h-10Z"/>
+        <path class="cls-3" d="M3135.27,680.54h10v9h-10Zm0,17.25h10V745h-10Z"/>
+        <path class="cls-3" d="M3193.46,721.4c0-16.25,11.71-24.51,22.88-24.51,8.62,0,14.61,4.72,16.34,8.44h.27v-7.54h10V745h-10v-7.54h-.27c-1.73,3.72-7.72,8.44-16.34,8.44C3205.17,745.91,3193.46,737.65,3193.46,721.4Zm24.78,15.43c7.63,0,15-5.26,15-15.43s-7.35-15.43-15-15.43-14.89,5.26-14.89,15.43S3210.71,736.83,3218.24,736.83Z"/>
+      </g>
+    </svg>
+  </div>
+  <div class="header-center">Painel Operacional</div>
+  <div class="header-right">
+    <div class="auto-refresh"><div class="auto-dot"></div><span>Auto 5min</span></div>
+    <div class="last-update" id="lastUpdate">—</div>
+    <button class="btn-config" onclick="openConfig()" title="Configurações">⚙</button>
+    <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+      Atualizar
+    </button>
+  </div>
+</header>
+
+<!-- DATETIME BAR -->
+<div class="datetime-bar">
+  <div class="datetime-item">📅 <strong id="dataHoje">—</strong></div>
+  <div class="datetime-item">🕐 <strong id="horaAgora">—</strong></div>
+  <div class="datetime-item">📦 Corte normal: <strong>15h30</strong></div>
+  <div class="datetime-item">🚀 Corte expressa: <strong>13h30</strong></div>
+  <div class="cutoff-badge" id="cutoffBadge">—</div>
+</div>
+
+<!-- ERROR BANNER -->
+<div class="error-banner" id="errorBanner"></div>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <div class="summary-card" onclick="scrollToSection('sec-expressa')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--expressa)"></div>Expressa</div>
+    <div class="summary-count c-expressa" id="cnt-expressa">—</div>
+  </div>
+  <div class="summary-card" onclick="scrollToSection('sec-atrasado')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--atrasado)"></div>Atrasados</div>
+    <div class="summary-count c-atrasado" id="cnt-atrasado">—</div>
+  </div>
+  <div class="summary-card" onclick="scrollToSection('sec-hoje')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--hoje)"></div>Enviar Hoje</div>
+    <div class="summary-count c-hoje" id="cnt-hoje">—</div>
+  </div>
+  <div class="summary-card" onclick="scrollToSection('sec-amanha')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--amanha)"></div>Enviar Amanhã</div>
+    <div class="summary-count c-amanha" id="cnt-amanha">—</div>
+  </div>
+  <div class="summary-card" onclick="scrollToSection('sec-retirada')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--retirada)"></div>Retirada em Loja</div>
+    <div class="summary-count c-retirada" id="cnt-retirada">—</div>
+  </div>
+  <div class="summary-card" onclick="scrollToSection('sec-transporte')">
+    <div class="summary-label"><div class="summary-dot" style="background:var(--transporte)"></div>Em Transporte</div>
+    <div class="summary-count c-transporte" id="cnt-transporte">—</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- EXPRESSA -->
+  <div class="section" id="sec-expressa">
+    <div class="section-header" onclick="toggleSection('sec-expressa')">
+      <div class="section-stripe" style="background:var(--expressa)"></div>
+      <div class="section-title">🚀 Entrega Expressa <span class="section-subtitle">— Despachar HOJE (corte 13h30 / sáb 12h)</span></div>
+      <div class="section-badge bg-expressa c-expressa" id="badge-expressa">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-expressa">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- ATRASADOS -->
+  <div class="section" id="sec-atrasado">
+    <div class="section-header" onclick="toggleSection('sec-atrasado')">
+      <div class="section-stripe" style="background:var(--atrasado)"></div>
+      <div class="section-title">⚠️ Atrasados <span class="section-subtitle">— Prazo de envio vencido</span></div>
+      <div class="section-badge bg-atrasado c-atrasado pulse" id="badge-atrasado">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-atrasado">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- HOJE -->
+  <div class="section" id="sec-hoje">
+    <div class="section-header" onclick="toggleSection('sec-hoje')">
+      <div class="section-stripe" style="background:var(--hoje)"></div>
+      <div class="section-title">📦 Enviar Hoje <span class="section-subtitle">— Pedidos até 15h30 deste dia útil</span></div>
+      <div class="section-badge bg-hoje c-hoje" id="badge-hoje">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-hoje">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- AMANHÃ -->
+  <div class="section" id="sec-amanha">
+    <div class="section-header" onclick="toggleSection('sec-amanha')">
+      <div class="section-stripe" style="background:var(--amanha)"></div>
+      <div class="section-title">📅 Enviar Amanhã <span class="section-subtitle">— Próximo dia útil</span></div>
+      <div class="section-badge bg-amanha c-amanha" id="badge-amanha">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-amanha">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- RETIRADA -->
+  <div class="section" id="sec-retirada">
+    <div class="section-header" onclick="toggleSection('sec-retirada')">
+      <div class="section-stripe" style="background:var(--retirada)"></div>
+      <div class="section-title">🏪 Retirada em Loja <span class="section-subtitle">— Aguardando cliente</span></div>
+      <div class="section-badge bg-retirada c-retirada" id="badge-retirada">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-retirada">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+  <!-- EM TRANSPORTE -->
+  <div class="section collapsed" id="sec-transporte">
+    <div class="section-header" onclick="toggleSection('sec-transporte')">
+      <div class="section-stripe" style="background:var(--transporte)"></div>
+      <div class="section-title">✅ Em Transporte <span class="section-subtitle">— Despachados (Relação de Volumes+)</span></div>
+      <div class="section-badge bg-transporte c-transporte" id="badge-transporte">0</div>
+      <div class="section-chevron">▾</div>
+    </div>
+    <div class="section-body" id="body-transporte">
+      <div class="loading-state"><div class="spinner"></div>Carregando...</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const CONFIG_KEY = 'farmapontocom_cfg';
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveConfig() {
+  const cfg = {
+    wbuyUser: document.getElementById('wbuyUser').value.trim(),
+    wbuyPass: document.getElementById('wbuyPass').value.trim(),
+    wbuyBearer: document.getElementById('wbuyBearer').value.trim(),
+    enviandoToken: document.getElementById('enviandoToken').value.trim(),
+    enviandoSlug: document.getElementById('enviandoSlug').value.trim(),
+  };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  closeConfig();
+  loadAll();
+}
+
+function openConfig() {
+  const cfg = getConfig();
+  document.getElementById('wbuyUser').value = cfg.wbuyUser || '';
+  document.getElementById('wbuyPass').value = cfg.wbuyPass || '';
+  document.getElementById('wbuyBearer').value = cfg.wbuyBearer || '';
+  document.getElementById('enviandoToken').value = cfg.enviandoToken || '';
+  document.getElementById('enviandoSlug').value = cfg.enviandoSlug || 'mundomed';
+  document.getElementById('configModal').classList.add('open');
+}
+
+function closeConfig() {
+  document.getElementById('configModal').classList.remove('open');
+}
+
+// Pre-popula credenciais
+(function() {
+  const cfg = getConfig();
+  // Sempre atualiza credenciais (força refresh das novas chaves)
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({
+    wbuyUser: 'eb384f45-1b4c-46a8-bddc-4f51bb747902',
+    wbuyPass: 'ca18af664ba64a40b4f2730589497346',
+    enviandoToken: 'ZFpUlAdSw0Ojy4avviGTDhWeMP7KzVfw',
+    enviandoSlug: 'mundomed'
+  }));
+})();
+
+// ============================================================
+// FERIADOS E DIAS ÚTEIS
+// ============================================================
+const FERIADOS = new Set([
+  '2025-01-01','2025-04-18','2025-04-21','2025-05-01','2025-09-07',
+  '2025-10-12','2025-11-02','2025-11-15','2025-12-25',
+  '2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
+  '2026-05-01','2026-09-07','2026-10-12','2026-11-02','2026-11-15','2026-12-25'
+]);
+
+function isDiaUtil(d) {
+  const dow = d.getDay();
+  if (dow === 0) return false; // domingo nunca
+  const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if (FERIADOS.has(key)) return false;
+  return true; // sábado (6) é dia útil para expressa
+}
+
+function isDiaUtilNormal(d) {
+  // Exclui sábado E domingo E feriados
+  const dow = d.getDay();
+  if (dow === 0 || dow === 6) return false;
+  const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return !FERIADOS.has(key);
+}
+
+function proximoDiaUtilNormal(d) {
+  const next = new Date(d);
+  next.setDate(next.getDate() + 1);
+  while (!isDiaUtilNormal(next)) next.setDate(next.getDate() + 1);
+  return next;
+}
+
+function dataKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function isSameDay(a, b) {
+  return dataKey(a) === dataKey(b);
+}
+
+function hoje() {
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+}
+
+function amanha() {
+  return proximoDiaUtilNormal(hoje());
+}
+
+// Regra normal (corte 15h30, seg-sex, sem sáb)
+function getEnvioNormal(dataPedido) {
+  const d = new Date(dataPedido);
+  const hora = d.getHours() + d.getMinutes() / 60;
+  const cutoff = 15.5;
+  const ehDiaUtil = isDiaUtilNormal(d);
+
+  if (ehDiaUtil && hora <= cutoff) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  } else {
+    return proximoDiaUtilNormal(d);
+  }
+}
+
+// Regra expressa (corte 13h30, seg-sáb; sáb corte 12h)
+function getEnvioExpressa(dataPedido) {
+  const d = new Date(dataPedido);
+  const dow = d.getDay();
+  const hora = d.getHours() + d.getMinutes() / 60;
+
+  // Sábado: corte 12h
+  if (dow === 6) {
+    const key = dataKey(d);
+    if (!FERIADOS.has(key) && hora <= 12) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    } else {
+      return proximoDiaUtilNormal(d);
+    }
+  }
+
+  // Seg-Sex dia útil: corte 13h30
+  if (isDiaUtilNormal(d) && hora <= 13.5) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  return proximoDiaUtilNormal(d);
+}
+
+// ============================================================
+// CLOCK
+// ============================================================
+function updateClock() {
+  const now = new Date();
+  const dias = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  document.getElementById('dataHoje').textContent =
+    `${dias[now.getDay()]}, ${now.toLocaleDateString('pt-BR')}`;
+  document.getElementById('horaAgora').textContent =
+    now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  const hora = now.getHours() + now.getMinutes() / 60;
+  const badge = document.getElementById('cutoffBadge');
+  const dow = now.getDay();
+
+  if (dow === 0 || FERIADOS.has(dataKey(now))) {
+    badge.textContent = 'DOMINGO / FERIADO — sem envios';
+    badge.className = 'cutoff-badge fechada';
+  } else if (dow === 6) {
+    if (hora <= 12) {
+      const min = Math.round((12 - hora) * 60);
+      badge.textContent = `SÁBADO — expressa aberta, faltam ${Math.floor(min/60)}h${min%60}m`;
+      badge.className = 'cutoff-badge';
+    } else {
+      badge.textContent = 'SÁBADO — corte expressa encerrado';
+      badge.className = 'cutoff-badge fechada';
+    }
+  } else if (hora <= 13.5) {
+    const min = Math.round((13.5 - hora) * 60);
+    badge.textContent = `JANELA ABERTA — expressa faltam ${Math.floor(min/60)}h${min%60}m`;
+    badge.className = 'cutoff-badge';
+  } else if (hora <= 15.5) {
+    const min = Math.round((15.5 - hora) * 60);
+    badge.textContent = `Expressa encerrada — normal faltam ${Math.floor(min/60)}h${min%60}m`;
+    badge.className = 'cutoff-badge';
+  } else {
+    badge.textContent = 'JANELA FECHADA — envios amanhã';
+    badge.className = 'cutoff-badge fechada';
+  }
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// ============================================================
+// UI
+// ============================================================
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+function scrollToSection(id) {
+  document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
+  document.getElementById(id).classList.remove('collapsed');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 10000);
+}
+
+function fmtMoney(v) {
+  return 'R$ ' + parseFloat(v || 0).toFixed(2)
+    .replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function fmtDatetime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtElapsed(iso) {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso);
+  const mins = Math.floor(diff / 60000);
+  const horas = Math.floor(mins / 60);
+  if (horas >= 24) return `${Math.floor(horas/24)}d${horas%24}h`;
+  if (horas > 0) return `${horas}h${String(mins%60).padStart(2,'0')}m`;
+  return `${mins}m`;
+}
+
+// ============================================================
+// WBUY API
+// ============================================================
+async function fetchWbuyOrders() {
+  const cfg = getConfig();
+  if (!cfg.wbuyUser || !cfg.wbuyPass) throw new Error('Credenciais Wbuy não configuradas. Clique em ⚙ para configurar.');
+
+  const basicAuth = 'Basic ZWIzODRmNDUtMWI0Yy00NmE4LWJkZGMtNGY1MWJiNzQ3OTAyOmNhMThhZjY2NGJhNjRhNDBiNGYyNzMwNTg5NDk3MzQ2';
+  const base = 'https://sistema.sistemawbuy.com.br/api/v1';
+
+  const d30 = new Date();
+  d30.setDate(d30.getDate() - 30);
+  const dateFrom = d30.toISOString().split('T')[0];
+
+  let allOrders = [];
+
+  // Chama função Netlify proxy
+  const d30 = dateFrom;
+  const proxyUrl = `/.netlify/functions/wbuy?path=/order&query=data_inicio=${d30}`;
+  const resp = await fetch(proxyUrl);
+  console.log('Proxy status:', resp.status);
+  if (!resp.ok) throw new Error(`Proxy erro ${resp.status}`);
+  const data = await resp.json();
+  // Wbuy retorna {code, message, responseCode, total, data:[...]}
+  allOrders = Array.isArray(data) ? data : (data.data || data.dados || data.orders || data.items || []);
+  console.log('Total pedidos recebidos:', allOrders.length);
+  // Remove duplicatas
+  const seen = new Set();
+  return allOrders.filter(o => {
+    const id = String(o.id || o.numero || o.number || '');
+    if (seen.has(id)) return false;
+    seen.add(id); return true;
+  });
+}
+
+// ============================================================
+// ENVIANDO API — pedidos do canal wbuy já despachados
+// ============================================================
+async function fetchEnviandoDespachados() {
+  const cfg = getConfig();
+  if (!cfg.enviandoToken || !cfg.enviandoSlug) return new Set();
+
+  const slug = cfg.enviandoSlug;
+  const token = cfg.enviandoToken;
+
+  try {
+    const query = `query Orders {
+      orders(filters: {slug: "${slug}"}) {
+        order orderDate situation orderSource
+      }
+    }`;
+
+    const resp = await fetch(`https://${slug}.enviando.nordware.io/webapi/graphql`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query })
+    });
+
+    if (!resp.ok) return new Set();
+    const data = await resp.json();
+    const orders = data?.data?.orders || [];
+
+    const statusFeito = ['relação de volumes','relacao de volumes','despachados','sincronizados','dispatched'];
+    const despachados = new Set();
+
+    for (const o of orders) {
+      const source = (o.orderSource || '').toLowerCase();
+      if (!source.includes('wbuy') && !source.includes('site') && !source.includes('loja')) continue;
+      const sit = (o.situation || '').toLowerCase();
+      if (statusFeito.some(s => sit.includes(s))) {
+        despachados.add(String(o.order));
+      }
+    }
+    return despachados;
+  } catch(e) {
+    console.warn('Enviando API err:', e);
+    return new Set();
+  }
+}
+
+// ============================================================
+// CLASSIFICAR PEDIDO
+// ============================================================
+function isExpressa(order) {
+  const frete = (
+    order.frete_tipo || order.shipping_type || order.tipo_frete ||
+    order.metodo_entrega || order.shipping_method || ''
+  ).toLowerCase();
+  return frete.includes('expres') || frete.includes('motoboy') ||
+         frete.includes('same day') || frete.includes('urgente') || frete.includes('rapido');
+}
+
+function isRetirada(order) {
+  const frete = (
+    order.frete_tipo || order.shipping_type || order.tipo_frete ||
+    order.metodo_entrega || order.shipping_method || ''
+  ).toLowerCase();
+  return frete.includes('retir') || frete.includes('loja') || frete.includes('pickup');
+}
+
+function classificarPedido(order, despachados) {
+  const id = String(order.id || order.numero || '');
+  const dataStr = order.data_criacao || order.created_at || order.data || '';
+  const dataPedido = dataStr ? new Date(dataStr) : new Date();
+
+  if (despachados.has(id)) return 'transporte';
+  if (isRetirada(order)) return 'retirada';
+
+  const h = hoje();
+
+  if (isExpressa(order)) {
+    const envioExp = getEnvioExpressa(dataPedido);
+    if (envioExp < h) return 'atrasado';
+    if (isSameDay(envioExp, h)) return 'expressa';
+    return 'amanha';
+  }
+
+  const envioNormal = getEnvioNormal(dataPedido);
+  if (envioNormal < h) return 'atrasado';
+  if (isSameDay(envioNormal, h)) return 'hoje';
+  return 'amanha';
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards(orders, sectionKey) {
+  const bodyEl = document.getElementById(`body-${sectionKey}`);
+
+  if (orders.length === 0) {
+    bodyEl.innerHTML = `<div class="empty-state"><div class="empty-icon">✓</div>Nenhum pedido nesta categoria</div>`;
+    return;
+  }
+
+  // Ordena mais antigo primeiro
+  orders.sort((a, b) => {
+    const da = new Date(a.data_criacao || a.created_at || a.data || 0);
+    const db = new Date(b.data_criacao || b.created_at || b.data || 0);
+    return da - db;
+  });
+
+  const c = sectionKey;
+
+  const cards = orders.map(o => {
+    const numero = o.numero || o.number || o.id || '—';
+    const cliente = o.cliente?.nome || o.customer?.name || o.nome_cliente || o.cliente_nome || '—';
+    const dataStr = o.data_criacao || o.created_at || o.data || '';
+    const valor = o.total || o.valor_total || o.total_value || 0;
+    const frete = o.frete_tipo || o.shipping_type || o.tipo_frete || o.metodo_entrega || '—';
+    const elapsed = fmtElapsed(dataStr);
+
+    // Itens
+    const itens = o.itens || o.items || o.produtos || [];
+    const itensHTML = itens.length > 0
+      ? itens.map(i => {
+          const qty = i.quantidade || i.quantity || 1;
+          const nome = i.nome || i.name || i.produto || i.descricao || '—';
+          const sku = i.sku || i.codigo || i.code || '';
+          return `<div class="order-item">
+            <span class="order-item-qty">${qty}x</span>
+            <span class="order-item-name">${nome}</span>
+            ${sku ? `<span class="order-item-sku">SKU: ${sku}</span>` : ''}
+          </div>`;
+        }).join('')
+      : '<div class="order-item" style="color:var(--muted)">—</div>';
+
+    return `<div class="order-card">
+      <div class="order-left">
+        <div class="order-num">#${numero}</div>
+        <div class="order-time">${fmtDatetime(dataStr)}</div>
+        <div class="order-elapsed bg-${c} c-${c}">${elapsed}</div>
+      </div>
+      <div class="order-middle">
+        <div class="order-client">${cliente}</div>
+        <div class="order-items">${itensHTML}</div>
+      </div>
+      <div class="order-right">
+        <div class="order-value">${fmtMoney(valor)}</div>
+        <div class="order-frete bg-${c} c-${c}">${frete}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  bodyEl.innerHTML = `<div class="orders-list">${cards}</div>`;
+}
+
+// ============================================================
+// LOAD ALL
+// ============================================================
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  const keys = ['hoje','amanha','atrasado','expressa','retirada','transporte'];
+  keys.forEach(k => {
+    document.getElementById(`body-${k}`).innerHTML =
+      '<div class="loading-state"><div class="spinner"></div>Carregando...</div>';
+  });
+
+  try {
+    const cfg = getConfig();
+    if (!cfg.wbuyUser) { openConfig(); return; }
+
+    const [wbuyOrders, despachados] = await Promise.all([
+      fetchWbuyOrders(),
+      fetchEnviandoDespachados()
+    ]);
+
+    // Filtra pagos
+    const statusPago = ['aprovado','pago','em_separacao','separado','processando',
+                        'approved','paid','processing','separacao'];
+    const pagos = wbuyOrders.filter(o => {
+      const s = (o.status || o.situacao || o.status_pagamento || o.status_pedido || '').toLowerCase();
+      return statusPago.some(sp => s.includes(sp));
+    });
+
+    // Classifica
+    const grupos = { hoje:[], amanha:[], atrasado:[], expressa:[], retirada:[], transporte:[] };
+    for (const order of pagos) {
+      const cat = classificarPedido(order, despachados);
+      grupos[cat].push(order);
+    }
+
+    // Render
+    Object.entries(grupos).forEach(([key, orders]) => {
+      renderCards(orders, key);
+      document.getElementById(`badge-${key}`).textContent = orders.length;
+      document.getElementById(`cnt-${key}`).textContent = orders.length;
+    });
+
+    // Atrasados piscam só se tiver
+    const badgeAt = document.getElementById('badge-atrasado');
+    if (grupos.atrasado.length === 0) badgeAt.classList.remove('pulse');
+    else badgeAt.classList.add('pulse');
+
+    document.getElementById('lastUpdate').textContent =
+      'Atualizado ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  } catch(e) {
+    console.error(e);
+    showError(e.message);
+    keys.forEach(k => {
+      document.getElementById(`body-${k}`).innerHTML =
+        `<div class="empty-state"><div class="empty-icon">⚠️</div>${e.message}</div>`;
+    });
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+// Auto refresh 5min
+setInterval(loadAll, 5 * 60 * 1000);
+
+// Init
+loadAll();
+</script>
+</body>
+</html>
